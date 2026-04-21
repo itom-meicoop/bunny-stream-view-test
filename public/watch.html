@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>動画再生 | Bunny Stream Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="main">
+    <div id="video-info">
+      <h2 id="video-title"></h2>
+      <img id="video-thumbnail" alt="サムネイル" style="display:none;cursor:pointer;">
+      <div id="player-container" style="display:none;">
+        <video id="video-player" controls playsinline></video>
+        <div id="custom-controls">
+          <!-- シークバー、音量、全画面ボタンはJSで生成 -->
+        </div>
+      </div>
+      <div id="status"></div>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="player.js"></script>
+</body>
+</html>

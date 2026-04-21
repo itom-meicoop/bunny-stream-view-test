@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>動画一覧 | Bunny Stream Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <h1>Bunny Stream 動画視聴デモ</h1>
+    <form id="goto-form">
+      <input type="text" id="videoId" placeholder="動画IDを入力" required>
+      <button type="submit">視聴ページへ</button>
+    </form>
+    <!-- サンプル動画リンク（将来はAPIで一覧取得） -->
+    <ul>
+      <li><a href="watch.html?videoId=YOUR_VIDEO_ID">サンプル動画を見る</a></li>
+    </ul>
+  </main>
+  <script>
+    document.getElementById('goto-form').onsubmit = function(e) {
+      e.preventDefault();
+      const id = document.getElementById('videoId').value.trim();
+      if (id) location.href = `watch.html?videoId=${encodeURIComponent(id)}`;
+    };
+  </script>
+</body>
+</html>
