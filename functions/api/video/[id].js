@@ -8,26 +8,29 @@ export async function onRequest(context) {
   const url = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
 
   const res = await fetch(url, {
-      headers: {
-          AccessKey: apiKey
-      }
+    headers: {
+      AccessKey: apiKey
+    }
   });
 
   if (!res.ok) {
     return new Response(JSON.stringify({ error: "Failed to fetch video info" }), {
       status: 500
-  });
+    });
   }
 
   const data = await res.json();
 
+  // ★ playlist.m3u8 の URL を自分で組み立てる
+  const playlistUrl = `${data.playbackUrl}/playlist.m3u8`;
+
   return new Response(JSON.stringify({
-      title: data.title,
-      thumbnailUrl: data.thumbnailUrl,
-      playlistUrl: data.playlistUrl,
-      status: data.status,
-      availableResolutions: data.availableResolutions
+    title: data.title,
+    thumbnailUrl: data.thumbnailUrl,
+    playlistUrl: playlistUrl,
+    status: data.status,
+    availableResolutions: data.availableResolutions
   }), {
-      headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json" }
   });
 }
