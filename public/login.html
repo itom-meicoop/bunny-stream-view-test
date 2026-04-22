@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>ログイン</h1>
+
+    <input id="email" type="email" placeholder="メールアドレス">
+    <button onclick="sendMagicLink()">ログインリンクを送信</button>
+
+    <script>
+    async function sendMagicLink() {
+      const email = document.getElementById("email").value;
+
+      // 環境変数を取得
+      const envRes = await fetch("/api/env");
+      const env = await envRes.json();
+
+      const supabase = supabase.createClient(
+        env.supabaseUrl,
+        env.supabaseAnonKey
+      );
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: "https://あなたのドメイン.com/auth/callback"
+        }
+      });
+
+      if (error) {
+        alert("メール送信に失敗しました");
+        return;
+      }
+
+      alert("ログイン用のメールを送信しました。ご確認ください。");
+    }
+    </script>
+</body>
+</html>

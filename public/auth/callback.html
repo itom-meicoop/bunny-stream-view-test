@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン処理中</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <p>ログイン処理中です…</p>
+
+    <script>
+    (async () => {
+      const envRes = await fetch("/api/env");
+      const env = await envRes.json();
+
+      const supabase = supabase.createClient(
+        env.supabaseUrl,
+        env.supabaseAnonKey
+      );
+
+      // URL のハッシュからセッションを復元
+      const { data, error } = await supabase.auth.getSessionFromUrl({
+        storeSession: true
+      });
+
+      if (error) {
+        alert("ログインに失敗しました");
+        return;
+      }
+
+      window.location.href = "/videos";
+    })();
+    </script>
+</body>
+</html>
