@@ -37,9 +37,6 @@
 
     <h1>動画追加</h1>
 
-    <!-- ============================
-         AI生成データのファイル読み込み
-         ============================ -->
     <h2>AI生成データのファイル読み込み</h2>
 
     <label>Bunny Video JSON（videoId を含む）</label>
@@ -53,9 +50,6 @@
 
     <hr />
 
-    <!-- ============================
-         動画追加フォーム
-         ============================ -->
     <form id="form">
         <label>Bunny Video ID</label>
         <input name="bunny_video_id" required />
@@ -84,20 +78,23 @@
     <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-      // 環境変数を取得
-      const envRes = await fetch("/api/env");
-      const env = await envRes.json();
+// ===============================
+// Supabase 初期化（ログイン画面と同じ方式）
+// ===============================
+let supabase = null;
 
+try {
+  const envRes = await fetch("/api/env");
+  const env = await envRes.json();
 
-    // Cloudflare Pages の env を使用
-    const supabase = createClient(
-            env.supabaseUrl,
-            env.supabaseAnonKey
-    );
+  supabase = createClient(env.supabaseUrl, env.supabaseAnonKey);
+} catch (e) {
+  console.warn("Supabase 初期化エラー:", e);
+}
 
-// -------------------------------
-// 汎用 JSON 読み込み関数
-// -------------------------------
+// ===============================
+// JSON 読み込み関数
+// ===============================
 function loadJSONFile(input, callback) {
   input.addEventListener("change", () => {
     const file = input.files[0];
@@ -116,17 +113,12 @@ function loadJSONFile(input, callback) {
   });
 }
 
-// -------------------------------
 // 1. Bunny JSON → bunny_video_id
-// -------------------------------
 loadJSONFile(document.getElementById("file_bunny_json"), (json) => {
   document.querySelector("input[name='bunny_video_id']").value = json.videoId || "";
 });
 
-// -------------------------------
-// 2. Summary JSON → summary_md / tags
-//    ※ embedding_text は無視
-// -------------------------------
+// 2. Summary JSON → summary_md / tags（embedding_text は無視）
 loadJSONFile(document.getElementById("file_summary_json"), (json) => {
   if (json.summary_md) {
     document.querySelector("textarea[name='summary_md']").value = json.summary_md;
@@ -136,9 +128,7 @@ loadJSONFile(document.getElementById("file_summary_json"), (json) => {
   }
 });
 
-// -------------------------------
 // 3. Embedding JSON → embedding_text / embedding
-// -------------------------------
 loadJSONFile(document.getElementById("file_embedding_json"), (json) => {
   if (json.text) {
     document.querySelector("textarea[name='embedding_text']").value = json.text;
@@ -148,9 +138,9 @@ loadJSONFile(document.getElementById("file_embedding_json"), (json) => {
   }
 });
 
-// -------------------------------
+// ===============================
 // フォーム送信 → Supabase 保存
-// -------------------------------
+// ===============================
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const f = e.target;
@@ -184,7 +174,7 @@ document.getElementById("form").onsubmit = async (e) => {
       summary_md: f.summary_md.value,
       embedding_text: f.embedding_text.value,
       embedding: JSON.parse(f.embedding.value),
-      model: "ruri-v3-30m"
+      model: "bge-m3-256"
     })
   });
 
