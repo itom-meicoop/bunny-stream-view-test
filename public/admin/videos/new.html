@@ -27,12 +27,35 @@
         h1 {
             margin-bottom: 20px;
         }
+
+        h2 {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
 
     <h1>動画追加</h1>
 
+    <!-- ============================
+         AI生成データのファイル読み込み
+         ============================ -->
+    <h2>AI生成データのファイル読み込み</h2>
+
+    <label>要約（Markdown）ファイル</label>
+    <input type="file" id="file_summary_md" accept=".md,.txt" />
+
+    <label>embedding JSONファイル（text + embedding）</label>
+    <input type="file" id="file_embedding_json" accept=".json,.txt" />
+
+    <label>タグファイル</label>
+    <input type="file" id="file_tags" accept=".txt" />
+
+    <hr />
+
+    <!-- ============================
+         動画追加フォーム
+         ============================ -->
     <form id="form">
         <label>Bunny Video ID</label>
         <input name="bunny_video_id" required />
@@ -44,16 +67,16 @@
         <textarea name="description"></textarea>
 
         <label>要約（Markdown）</label>
-        <textarea name="summary_md" placeholder="AI生成したMarkdown要約を貼り付け"></textarea>
+        <textarea name="summary_md"></textarea>
 
-        <label>embedding 用テキスト（プレーンテキスト）</label>
-        <textarea name="embedding_text" placeholder="AI生成した1段落テキストを貼り付け"></textarea>
+        <label>embedding 用テキスト</label>
+        <textarea name="embedding_text"></textarea>
 
         <label>タグ（カンマ区切り）</label>
-        <textarea name="tags" placeholder="例: 格闘技, パスガード, 初心者向け"></textarea>
+        <textarea name="tags"></textarea>
 
         <label>embedding（JSON配列）</label>
-        <textarea name="embedding" placeholder="[0.123, -0.456, ...]"></textarea>
+        <textarea name="embedding"></textarea>
 
         <button type="submit">保存</button>
     </form>
@@ -67,13 +90,71 @@ const supabase = createClient(
   window.env.SUPABASE_ANON_KEY
 );
 
+// -------------------------------
+// 汎用ファイル読み込み関数
+// -------------------------------
+function loadTextFile(input, callback) {
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => callback(reader.result);
+    reader.readAsText(file);
+  });
+}
+
+function loadJSONFile(input, callback) {
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const json = JSON.parse(reader.result);
+        callback(json);
+      } catch (e) {
+        alert("JSON の読み込みに失敗しました");
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// -------------------------------
+// 1. summary.md → summary_md に反映
+// -------------------------------
+loadTextFile(document.getElementById("file_summary_md"), (text) => {
+  document.querySelector("textarea[name='summary_md']").value = text;
+});
+
+// -------------------------------
+// 2. embedding JSON → embedding_text + embedding に反映
+// -------------------------------
+loadJSONFile(document.getElementById("file_embedding_json"), (json) => {
+  document.querySelector("textarea[name='embedding_text']").value = json.text || "";
+  document.querySelector("textarea[name='embedding']").value = JSON.stringify(json.embedding, null, 2);
+});
+
+// -------------------------------
+// 3. tags.txt → tags に反映
+// -------------------------------
+loadTextFile(document.getElementById("file_tags"), (text) => {
+  document.querySelector("textarea[name='tags']").value = text
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .join(", ");
+});
+
+// -------------------------------
+// フォーム送信 → Supabase 保存
+// -------------------------------
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const f = e.target;
 
-  // ---------------------------
   // 1. videos に保存
-  // ---------------------------
   const videoRes = await fetch("/api/videos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -94,20 +175,14 @@ document.getElementById("form").onsubmit = async (e) => {
 
   const video = await videoRes.json();
 
-  // ---------------------------
   // 2. embedding を保存
-  // ---------------------------
-  const embeddingArray = f.embedding.value
-    ? JSON.parse(f.embedding.value)
-    : null;
-
   const embedRes = await fetch(`/api/videos/${video.id}/embedding`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       summary_md: f.summary_md.value,
       embedding_text: f.embedding_text.value,
-      embedding: embeddingArray,
+      embedding: JSON.parse(f.embedding.value),
       model: "bge-m3-256"
     })
   });
