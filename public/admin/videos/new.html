@@ -42,14 +42,14 @@
          ============================ -->
     <h2>AI生成データのファイル読み込み</h2>
 
-    <label>要約（Markdown）ファイル</label>
-    <input type="file" id="file_summary_md" accept=".md,.txt" />
+    <label>Bunny Video JSON（videoId を含む）</label>
+    <input type="file" id="file_bunny_json" accept=".json,.txt" />
 
-    <label>embedding JSONファイル（text + embedding）</label>
+    <label>Summary JSON（summary_md / tags）</label>
+    <input type="file" id="file_summary_json" accept=".json,.txt" />
+
+    <label>Embedding JSON（text + embedding）</label>
     <input type="file" id="file_embedding_json" accept=".json,.txt" />
-
-    <label>タグファイル</label>
-    <input type="file" id="file_tags" accept=".txt" />
 
     <hr />
 
@@ -91,19 +91,8 @@ const supabase = createClient(
 );
 
 // -------------------------------
-// 汎用ファイル読み込み関数
+// 汎用 JSON 読み込み関数
 // -------------------------------
-function loadTextFile(input, callback) {
-  input.addEventListener("change", () => {
-    const file = input.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => callback(reader.result);
-    reader.readAsText(file);
-  });
-}
-
 function loadJSONFile(input, callback) {
   input.addEventListener("change", () => {
     const file = input.files[0];
@@ -123,28 +112,35 @@ function loadJSONFile(input, callback) {
 }
 
 // -------------------------------
-// 1. summary.md → summary_md に反映
+// 1. Bunny JSON → bunny_video_id
 // -------------------------------
-loadTextFile(document.getElementById("file_summary_md"), (text) => {
-  document.querySelector("textarea[name='summary_md']").value = text;
+loadJSONFile(document.getElementById("file_bunny_json"), (json) => {
+  document.querySelector("input[name='bunny_video_id']").value = json.videoId || "";
 });
 
 // -------------------------------
-// 2. embedding JSON → embedding_text + embedding に反映
+// 2. Summary JSON → summary_md / tags
+//    ※ embedding_text は無視
+// -------------------------------
+loadJSONFile(document.getElementById("file_summary_json"), (json) => {
+  if (json.summary_md) {
+    document.querySelector("textarea[name='summary_md']").value = json.summary_md;
+  }
+  if (json.tags) {
+    document.querySelector("textarea[name='tags']").value = json.tags.join(", ");
+  }
+});
+
+// -------------------------------
+// 3. Embedding JSON → embedding_text / embedding
 // -------------------------------
 loadJSONFile(document.getElementById("file_embedding_json"), (json) => {
-  document.querySelector("textarea[name='embedding_text']").value = json.text || "";
-  document.querySelector("textarea[name='embedding']").value = JSON.stringify(json.embedding, null, 2);
-});
-
-// -------------------------------
-// 3. tags.txt → tags に反映
-// -------------------------------
-loadTextFile(document.getElementById("file_tags"), (text) => {
-  document.querySelector("textarea[name='tags']").value = text
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .join(", ");
+  if (json.text) {
+    document.querySelector("textarea[name='embedding_text']").value = json.text;
+  }
+  if (json.embedding) {
+    document.querySelector("textarea[name='embedding']").value = JSON.stringify(json.embedding, null, 2);
+  }
 });
 
 // -------------------------------
@@ -183,7 +179,7 @@ document.getElementById("form").onsubmit = async (e) => {
       summary_md: f.summary_md.value,
       embedding_text: f.embedding_text.value,
       embedding: JSON.parse(f.embedding.value),
-      model: "bge-m3-256"
+      model: "ruri-v3-30m"
     })
   });
 
