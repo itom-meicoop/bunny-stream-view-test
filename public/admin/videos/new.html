@@ -84,11 +84,16 @@
     <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// Cloudflare Pages の env を使用
-const supabase = createClient(
-  window.env.SUPABASE_URL,
-  window.env.SUPABASE_ANON_KEY
-);
+      // 環境変数を取得
+      const envRes = await fetch("/api/env");
+      const env = await envRes.json();
+
+
+    // Cloudflare Pages の env を使用
+    const supabase = createClient(
+            env.supabaseUrl,
+            env.supabaseAnonKey
+    );
 
 // -------------------------------
 // 汎用 JSON 読み込み関数
