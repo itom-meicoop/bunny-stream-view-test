@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <title>動画追加</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        input, textarea {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>動画追加</h1>
+
+    <form id="form">
+        <label>Bunny Video ID</label>
+        <input name="bunny_video_id" required />
+
+        <label>タイトル</label>
+        <input name="title" required />
+
+        <label>説明</label>
+        <textarea name="description"></textarea>
+
+        <label>要約（Markdown）</label>
+        <textarea name="summary_md" placeholder="AI生成したMarkdown要約を貼り付け"></textarea>
+
+        <label>embedding 用テキスト（プレーンテキスト）</label>
+        <textarea name="embedding_text" placeholder="AI生成した1段落テキストを貼り付け"></textarea>
+
+        <label>タグ（カンマ区切り）</label>
+        <textarea name="tags" placeholder="例: 格闘技, パスガード, 初心者向け"></textarea>
+
+        <label>embedding（JSON配列）</label>
+        <textarea name="embedding" placeholder="[0.123, -0.456, ...]"></textarea>
+
+        <button type="submit">保存</button>
+    </form>
+
+    <script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+// Cloudflare Pages の env を使用
+const supabase = createClient(
+  window.env.SUPABASE_URL,
+  window.env.SUPABASE_ANON_KEY
+);
+
+document.getElementById("form").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+
+  // ---------------------------
+  // 1. videos に保存
+  // ---------------------------
+  const videoRes = await fetch("/api/videos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bunny_video_id: f.bunny_video_id.value,
+      title: f.title.value,
+      description: f.description.value,
+      tags: f.tags.value
+        ? f.tags.value.split(",").map(t => t.trim())
+        : []
+    })
+  });
+
+  if (!videoRes.ok) {
+    alert("動画情報の保存に失敗しました");
+    return;
+  }
+
+  const video = await videoRes.json();
+
+  // ---------------------------
+  // 2. embedding を保存
+  // ---------------------------
+  const embeddingArray = f.embedding.value
+    ? JSON.parse(f.embedding.value)
+    : null;
+
+  const embedRes = await fetch(`/api/videos/${video.id}/embedding`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      summary_md: f.summary_md.value,
+      embedding_text: f.embedding_text.value,
+      embedding: embeddingArray,
+      model: "bge-m3-256"
+    })
+  });
+
+  if (!embedRes.ok) {
+    alert("embedding の保存に失敗しました");
+    return;
+  }
+
+  alert("保存しました");
+  location.href = "/admin/videos";
+};
+    </script>
+
+</body>
+</html>

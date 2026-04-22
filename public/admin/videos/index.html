@@ -1,0 +1,32 @@
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+const supabase = createClient(
+  window.env.SUPABASE_URL,
+  window.env.SUPABASE_ANON_KEY
+);
+
+async function loadVideos() {
+  const { data } = await supabase
+    .from("videos")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const list = document.getElementById("list");
+  list.innerHTML = data.map(v => `
+    <div>
+      <h3>${v.title}</h3>
+      <p>${v.description ?? ""}</p>
+      <button onclick="location.href='/admin/videos/${v.id}/edit'">編集</button>
+      <button onclick="deleteVideo('${v.id}')">削除</button>
+    </div>
+  `).join("");
+}
+
+async function deleteVideo(id) {
+  await fetch(`/api/videos/${id}`, { method: "DELETE" });
+  loadVideos();
+}
+
+loadVideos();
+</script>
