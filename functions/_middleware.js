@@ -5,10 +5,13 @@ export async function onRequest(context) {
 
     // ログイン不要のページ
     const publicPaths = [
+        "/",
+        "/index.html",
         "/login",
         "/auth/callback",
         "/api/env"
     ];
+
 
     if (publicPaths.some(path => url.pathname.startsWith(path))) {
         return context.next();
